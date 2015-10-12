@@ -1,6 +1,6 @@
 /* 
  * Author: @rohit9889
- * plugin: jquery.fade.slider v2.1
+ * plugin: jquery.fade.slider v2.1.1
  * website: http://jqueryfadeslider.com/
  * Copyright (c) 2015 Rohit Sharma
  * Licensed under MIT
@@ -120,15 +120,18 @@
       var that = this
       if(this.fadeSliderBase.fade){
         that.fadeSliderBase.startIndex += that.fadeSliderBase.itemPerPage
-        // Perform Steps 1 through 4 at the specified `timeout`
-        var arrayOfIndexes = Array.apply(null, {length: that.fadeSliderBase.totalItems}).map(function(_,index){return index})
-        var elemsToShow    = selectElemFromArray(arrayOfIndexes, that.fadeSliderBase.startIndex, that.fadeSliderBase.itemPerPage)
-        startAnim(elemsToShow, that.fadeSliderBase.width, that.fadeSliderBase.wrapper, that.fadeSliderBase.children)
-
+      
         // Reset startIndex if it exceeds totalItems
         if(that.fadeSliderBase.startIndex >= that.fadeSliderBase.totalItems){
           that.fadeSliderBase.startIndex = that.fadeSliderBase.startIndex - that.fadeSliderBase.totalItems
         }
+      
+        // Perform Steps 1 through 4 at the specified `timeout`
+        var arrayOfIndexes = Array.apply(null, {length: that.fadeSliderBase.totalItems}).map(function(_,index){return index})
+      
+        var elemsToShow    = selectElemFromArray(arrayOfIndexes, that.fadeSliderBase.startIndex, that.fadeSliderBase.itemPerPage)
+
+        startAnim(elemsToShow, that.fadeSliderBase.width, that.fadeSliderBase.wrapper, that.fadeSliderBase.children)
       } else {
         var toremove = $($('.jquery-fade-slider-clones', that.fadeSliderBase.wrapper)[0])
 
