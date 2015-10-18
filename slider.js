@@ -1,6 +1,6 @@
 /* 
  * Author: @rohit9889
- * plugin: jquery.fade.slider v2.1.1
+ * plugin: jquery.fade.slider v2.2
  * website: http://jqueryfadeslider.com/
  * Copyright (c) 2015 Rohit Sharma
  * Licensed under MIT
@@ -15,13 +15,27 @@
       startIndex:  0,
       timeout:     4000,
       fade:        true,
-      autoplay:    true
+      autoplay:    true,
+      beforeInit:     function(){},
+      afterInit:      function(){},
+      beforePrevious: function(){},
+      afterPrevious:  function(){},
+      beforeNext:     function(){},
+      afterNext:      function(){},
+      beforeDestroy:  function(){},
+      afterDestroy:   function(){}
     }
+
+
 
     defaults.wrapper = this
     this.addClass('jquery-fade-slider-wrapper')
 
     this.fadeSliderBase = $.extend({}, defaults, options)
+    
+    // trigger `beforeInit` Event
+    this.fadeSliderBase.beforeInit(this, getFadeSliderSettings(this.fadeSliderBase))
+
     // Get a list of all the child divs
     this.fadeSliderBase.children = $('div', this.fadeSliderBase.wrapper)
 
@@ -55,6 +69,13 @@
       }
       that.fadeSliderBase.width = 100 / that.fadeSliderBase.itemPerPage
     })
+
+    // Autoplay will directly start the animation, so need to trigger the `afterInit` event here
+    // This is a no return point if `autoplay` is set to true
+    if(!!this.fadeSliderBase.autoplay){
+      // trigger `afterInit` Event
+      this.fadeSliderBase.afterInit(this, getFadeSliderSettings(this.fadeSliderBase))
+    }
 
     if(this.fadeSliderBase.fade){
       // Fade Effect
@@ -110,14 +131,30 @@
       }
     }
 
+    // If `autoplay` is set to false now is the time to trigger the `afterInit` event
+    if(!this.fadeSliderBase.autoplay){
+      // trigger `afterInit` Event
+      this.fadeSliderBase.afterInit(this, getFadeSliderSettings(this.fadeSliderBase))
+    }
+
     this.destroy = function(){
-      clearInterval(this.interval)
+      // trigger `beforeDestroy` Event
+      this.fadeSliderBase.beforeDestroy(this)
+
       this.fadeSliderBase.children.css({display: 'block'})
       $('.jquery-fade-slider-clones', this.fadeSliderBase.wrapper).remove()
+      clearInterval(this.interval)
+
+      // trigger `afterDestroy` Event
+      this.fadeSliderBase.afterDestroy(this)
     }
 
     this.next = function(){
       var that = this
+
+      // trigger `beforeNext` Event
+      this.fadeSliderBase.beforeNext(this, getFadeSliderSettings(this.fadeSliderBase))
+
       if(this.fadeSliderBase.fade){
         that.fadeSliderBase.startIndex += that.fadeSliderBase.itemPerPage
       
@@ -151,10 +188,16 @@
           }
         })
       }
+
+      // trigger `afterNext` Event
+      this.fadeSliderBase.afterNext(this, getFadeSliderSettings(this.fadeSliderBase))
     }
 
     this.prev = function(){
       var that = this
+
+      // trigger `beforePrevious` Event
+      this.fadeSliderBase.beforePrevious(this, getFadeSliderSettings(this.fadeSliderBase))
 
       if(this.fadeSliderBase.fade){
         that.fadeSliderBase.startIndex -= that.fadeSliderBase.itemPerPage
@@ -190,8 +233,10 @@
           }
         })
       }
-    }
 
+      // trigger `afterPrevious` Event
+      this.fadeSliderBase.afterPrevious(this, getFadeSliderSettings(this.fadeSliderBase))
+    }
 
     return this
   }
@@ -271,5 +316,17 @@
       height: $('.jquery-fade-slider-clones', wrapper).css('height'),
       overflow: 'hidden'
     })
+  }
+
+  function getFadeSliderSettings(settingsObj){
+    return {
+      itemPerPage:       settingsObj.itemPerPage,
+      itemPerPageMobile: settingsObj.itemPerPageMobile,
+      itemPerPageTablet: settingsObj.itemPerPageTablet,
+      startIndex:        settingsObj.startIndex,
+      timeout:           settingsObj.timeout,
+      fade:              settingsObj.fade,
+      autoplay:          settingsObj.autoplay
+    }
   }
  }(jQuery))
