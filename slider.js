@@ -1,6 +1,6 @@
 /* 
  * Author: @rohit9889
- * plugin: jquery.fade.slider v2.2
+ * plugin: jquery.fade.slider v2.3
  * website: http://jqueryfadeslider.com/
  * Copyright (c) 2015 Rohit Sharma
  * Licensed under MIT
@@ -16,6 +16,7 @@
       timeout:     4000,
       fade:        true,
       autoplay:    true,
+      remote:      false,
       beforeInit:     function(){},
       afterInit:      function(){},
       beforePrevious: function(){},
@@ -26,127 +27,116 @@
       afterDestroy:   function(){}
     }
 
-
+    var that = this
 
     defaults.wrapper = this
     this.addClass('jquery-fade-slider-wrapper')
 
     this.fadeSliderBase = $.extend({}, defaults, options)
-    
-    // trigger `beforeInit` Event
-    this.fadeSliderBase.beforeInit(this, getFadeSliderSettings(this.fadeSliderBase))
 
-    // Get a list of all the child divs
-    this.fadeSliderBase.children = $('div', this.fadeSliderBase.wrapper)
+    this.initFadeSlider = function(){
+      var that = this
 
-    // Count the children
-    this.fadeSliderBase.totalItems  = $(this.fadeSliderBase.children).length    
+      // trigger `beforeInit` Event
+      this.fadeSliderBase.beforeInit(this, getFadeSliderSettings(this.fadeSliderBase))
 
-    // Honey, I Shrunk the Kids
-    $(this.fadeSliderBase.children).attr('style', 'display:none;')
+      // Get a list of all the child divs
+      this.fadeSliderBase.children = $('div', this.fadeSliderBase.wrapper)
 
-    // Reset the number of itemPerPage based on window width
-    if($(window).width() < 450){
-      this.fadeSliderBase.itemPerPage = this.fadeSliderBase.itemPerPageMobile
-    } else if($(window).width() >= 450 && $(window).width() < 1000){
-      this.fadeSliderBase.itemPerPage = this.fadeSliderBase.itemPerPageTablet
-    }
+      // Count the children
+      this.fadeSliderBase.totalItems  = $(this.fadeSliderBase.children).length    
 
-    // The space alloted to every child
-    this.fadeSliderBase.width = 100 / this.fadeSliderBase.itemPerPage
+      // Honey, I Shrunk the Kids
+      $(this.fadeSliderBase.children).attr('style', 'display:none;')
 
-    // Enforce timeout is greater than or equal to 2 seconds
-    if(this.fadeSliderBase.timeout < 2000) this.fadeSliderBase.timeout = 2000
-
-    // Providing support to the dumb people who resize the screen to test responsiveness
-    $(window).resize(function(){
+      // Reset the number of itemPerPage based on window width
       if($(window).width() < 450){
-        that.fadeSliderBase.itemPerPage = that.fadeSliderBase.itemPerPageMobile
+        this.fadeSliderBase.itemPerPage = this.fadeSliderBase.itemPerPageMobile
       } else if($(window).width() >= 450 && $(window).width() < 1000){
-        that.fadeSliderBase.itemPerPage = that.fadeSliderBase.itemPerPageTablet
+        this.fadeSliderBase.itemPerPage = this.fadeSliderBase.itemPerPageTablet
+      }
+
+      // The space alloted to every child
+      this.fadeSliderBase.width = 100 / this.fadeSliderBase.itemPerPage
+
+      // Enforce timeout is greater than or equal to 2 seconds
+      if(this.fadeSliderBase.timeout < 2000) this.fadeSliderBase.timeout = 2000
+
+      // Providing support to the dumb people who resize the screen to test responsiveness
+      $(window).resize(function(){
+        if($(window).width() < 450){
+          that.fadeSliderBase.itemPerPage = that.fadeSliderBase.itemPerPageMobile
+        } else if($(window).width() >= 450 && $(window).width() < 1000){
+          that.fadeSliderBase.itemPerPage = that.fadeSliderBase.itemPerPageTablet
+        } else {
+          that.fadeSliderBase.itemPerPage = that.fadeSliderBase.itemPerPage
+        }
+        that.fadeSliderBase.width = 100 / that.fadeSliderBase.itemPerPage
+      })
+
+      // Autoplay will directly start the animation, so need to trigger the `afterInit` event here
+      // This is a no return point if `autoplay` is set to true
+      if(!!this.fadeSliderBase.autoplay){
+        // trigger `afterInit` Event
+        this.fadeSliderBase.afterInit(this, getFadeSliderSettings(this.fadeSliderBase))
+      }
+
+      if(this.fadeSliderBase.fade){
+        // Fade Effect
+        // Step 1: Initialize empty array of element indexes
+        this.fadeSliderBase.arrayOfIndexes = Array.apply(null, {
+          length: this.fadeSliderBase.totalItems
+        }).map(function(_,index){return index})
+
+        // Step 2: Get the element indexes that must be visible
+        this.fadeSliderBase.elemsToShow = selectElemFromArray(
+          this.fadeSliderBase.arrayOfIndexes,
+          this.fadeSliderBase.startIndex,
+          this.fadeSliderBase.itemPerPage)
+
+        // Step 3: Trigger displaying elements
+        startAnim(
+          this.fadeSliderBase.elemsToShow,
+          this.fadeSliderBase.width,
+          this.fadeSliderBase.wrapper,
+          this.fadeSliderBase.children
+        )
+
+        //Calculate and get the height of the shortest child
+        this.css('min-height', heightOfShortestChild(this.fadeSliderBase.children))
+
+        // Run Animation if autoplay is true
+        if(that.fadeSliderBase.autoplay){
+          this.interval = setInterval(function(){
+            that.next()
+          }, that.fadeSliderBase.timeout)
+        }
       } else {
-        that.fadeSliderBase.itemPerPage = that.fadeSliderBase.itemPerPage
+        // Slide Effect
+        var arrayOfIndexes = Array.apply(null, {length: this.fadeSliderBase.totalItems}).map(function(_,index){return index})
+        var elemsToShow    = selectElemFromArray(arrayOfIndexes, this.fadeSliderBase.startIndex, arrayOfIndexes.length)
+        addElemsInWrapper(
+          elemsToShow,
+          this.fadeSliderBase.width,
+          this.fadeSliderBase.wrapper,
+          this.fadeSliderBase.children,
+          this.fadeSliderBase.itemPerPage)
+
+        this.fadeSliderBase.innerWrapper = $('.fade-slider-wrapper', this.fadeSliderBase.wrapper)
+        var that = this
+        this.css('min-height', heightOfShortestChild(this.fadeSliderBase.children))
+        if(that.fadeSliderBase.autoplay){
+          this.interval = setInterval(function(){
+            that.next()
+          }, that.fadeSliderBase.timeout)
+        }
       }
-      that.fadeSliderBase.width = 100 / that.fadeSliderBase.itemPerPage
-    })
 
-    // Autoplay will directly start the animation, so need to trigger the `afterInit` event here
-    // This is a no return point if `autoplay` is set to true
-    if(!!this.fadeSliderBase.autoplay){
-      // trigger `afterInit` Event
-      this.fadeSliderBase.afterInit(this, getFadeSliderSettings(this.fadeSliderBase))
-    }
-
-    if(this.fadeSliderBase.fade){
-      // Fade Effect
-      // Step 1: Initialize empty array of element indexes
-      this.fadeSliderBase.arrayOfIndexes = Array.apply(null, {
-        length: this.fadeSliderBase.totalItems
-      }).map(function(_,index){return index})
-
-      // Step 2: Get the element indexes that must be visible
-      this.fadeSliderBase.elemsToShow = selectElemFromArray(
-        this.fadeSliderBase.arrayOfIndexes,
-        this.fadeSliderBase.startIndex,
-        this.fadeSliderBase.itemPerPage)
-
-      // Step 3: Trigger displaying elements
-      startAnim(
-        this.fadeSliderBase.elemsToShow,
-        this.fadeSliderBase.width,
-        this.fadeSliderBase.wrapper,
-        this.fadeSliderBase.children
-      )
-
-      // Step 4: Increment the counter to the next image
-      // this.fadeSliderBase.startIndex += this.fadeSliderBase.itemPerPage
-      var that = this
-      //Calculate and get the height of the shortest child
-      this.css('min-height', heightOfShortestChild(this.fadeSliderBase.children))
-
-      // Run Animation if autoplay is true
-      if(that.fadeSliderBase.autoplay){
-        this.interval = setInterval(function(){
-          that.next()
-        }, that.fadeSliderBase.timeout)
+      // If `autoplay` is set to false now is the time to trigger the `afterInit` event
+      if(!this.fadeSliderBase.autoplay){
+        // trigger `afterInit` Event
+        this.fadeSliderBase.afterInit(this, getFadeSliderSettings(this.fadeSliderBase))
       }
-    } else {
-      // Slide Effect
-      var arrayOfIndexes = Array.apply(null, {length: this.fadeSliderBase.totalItems}).map(function(_,index){return index})
-      var elemsToShow    = selectElemFromArray(arrayOfIndexes, this.fadeSliderBase.startIndex, arrayOfIndexes.length)
-      addElemsInWrapper(
-        elemsToShow,
-        this.fadeSliderBase.width,
-        this.fadeSliderBase.wrapper,
-        this.fadeSliderBase.children,
-        this.fadeSliderBase.itemPerPage)
-
-      this.fadeSliderBase.innerWrapper = $('.fade-slider-wrapper', this.fadeSliderBase.wrapper)
-      var that = this
-      this.css('min-height', heightOfShortestChild(this.fadeSliderBase.children))
-      if(that.fadeSliderBase.autoplay){
-        this.interval = setInterval(function(){
-          that.next()
-        }, that.fadeSliderBase.timeout)
-      }
-    }
-
-    // If `autoplay` is set to false now is the time to trigger the `afterInit` event
-    if(!this.fadeSliderBase.autoplay){
-      // trigger `afterInit` Event
-      this.fadeSliderBase.afterInit(this, getFadeSliderSettings(this.fadeSliderBase))
-    }
-
-    this.destroy = function(){
-      // trigger `beforeDestroy` Event
-      this.fadeSliderBase.beforeDestroy(this)
-
-      this.fadeSliderBase.children.css({display: 'block'})
-      $('.jquery-fade-slider-clones', this.fadeSliderBase.wrapper).remove()
-      clearInterval(this.interval)
-
-      // trigger `afterDestroy` Event
-      this.fadeSliderBase.afterDestroy(this)
     }
 
     this.next = function(){
@@ -238,6 +228,67 @@
       this.fadeSliderBase.afterPrevious(this, getFadeSliderSettings(this.fadeSliderBase))
     }
 
+    this.destroy = function(){
+      // trigger `beforeDestroy` Event
+      this.fadeSliderBase.beforeDestroy(this)
+
+      this.fadeSliderBase.children.css({display: 'block'})
+      $('.jquery-fade-slider-clones', this.fadeSliderBase.wrapper).remove()
+      clearInterval(this.interval)
+
+      // trigger `afterDestroy` Event
+      this.fadeSliderBase.afterDestroy(this)
+    }
+
+    this.getRemoteData = function(callback){
+      var url   = this.fadeSliderBase.remote.url
+      var field = this.fadeSliderBase.remote.field
+      var array = []
+
+      $.ajax({
+        crossDomain: true,
+        url: url,
+        headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}
+      })
+      .done(function(dataString){
+        JSON.parse(dataString).forEach(function(dataElem){
+          array.push(dataElem[field])
+        })
+        callback(array)
+      })
+    }
+
+    this.addRemoteElements = function(callback){
+      var that = this
+      var hasImage = this.fadeSliderBase.remote.isImage
+      this.getRemoteData(function(elementsArray){
+        var childrenClass = that.children().attr('class')
+        that.children().remove()
+
+        elementsArray.forEach(function(element){
+          var appendString
+          if(hasImage){
+            appendString = '<div class="'+ childrenClass +'"><img src="' + element + '"></div>'
+          } else {
+            appendString = '<div class="'+ childrenClass +'">' + element + '</div>'
+          }
+
+          that.append(appendString)
+        })
+
+        callback()
+      })
+    }
+
+    if(!this.fadeSliderBase.remote){
+      this.initFadeSlider()
+    } else {
+      var that = this
+      this.addRemoteElements(function(){
+        that.initFadeSlider()
+      })
+    }
+
     return this
   }
 
@@ -290,7 +341,7 @@
       var elem  = children[index]
       var clone = $(elem).clone()
       clone.addClass('jquery-fade-slider-clones')
-      clone.attr('style', 'width: ' + width + '%;float: left;')
+      clone.attr('style', 'width: ' + width + '%;float: left;overflow-wrap: break-word;')
       wrapper.append(clone)
       clone.hide().fadeIn(1000) // Set delay for new elements to be visible
     })
