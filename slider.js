@@ -1,6 +1,6 @@
 /* 
  * Author: @rohit9889
- * plugin: jquery.fade.slider v2.3
+ * plugin: jquery.fade.slider v2.3.1
  * website: http://jqueryfadeslider.com/
  * Copyright (c) 2015 Rohit Sharma
  * Licensed under MIT
