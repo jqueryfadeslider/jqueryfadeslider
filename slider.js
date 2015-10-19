@@ -250,8 +250,11 @@
         url: url,
         headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}
       })
-      .done(function(dataString){
-        JSON.parse(dataString).forEach(function(dataElem){
+      .done(function(data){
+        if(typeof data == 'string'){
+          data = JSON.parse(data)
+        }
+        data.forEach(function(dataElem){
           array.push(dataElem[field])
         })
         callback(array)
